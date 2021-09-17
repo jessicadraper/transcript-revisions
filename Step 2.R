@@ -5,7 +5,7 @@
 #
 #   Help: https://stringr.tidyverse.org/articles/regular-expressions.html
 #
-#   *This project has been funded in part by National Endowment for the Humanities: Exploring the Human Endeavor.*
+#   *This project has been funded in part by National Endowment for the Humanities: Exploring the Human Endeavor. http://www.neh.gov/ *
 #
 # ----------------------------------------------
 
