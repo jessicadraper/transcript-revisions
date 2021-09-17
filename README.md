@@ -3,4 +3,4 @@ This project was developed to revise auto-generated transcripts from Microsoft S
 
 This project was developed by Ms. Jessica Draper in collaboration with Dr. Katherine Christoffersen, Dr. Ryan Bessett and Dr. Ana Carvalho and made possible in part through funding from the **[National Endowment of the Humanities](https://www.neh.gov/)**.
 
-For more information on this project, please read our blog post **[here](https://www.utrgv.edu/cobiva/blog/2021/05/revising-stream-transcripts-to-webvtt-with-r.htm)**.
+For more information on this project, please visit our [website](utrgv.edu/cobiva) and read our [blog post](https://www.utrgv.edu/cobiva/blog/2021/05/revising-stream-transcripts-to-webvtt-with-r.htm)**.
