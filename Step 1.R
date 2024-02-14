@@ -28,7 +28,7 @@ library(stringr)
 # ==============================
 
 # (!) YOUR working directory, ending with "Step 1" folder (wd):
-your_wd <- "/Users/Jess/Documents/Work/Personal Work/webvtt revisions/Step 1"
+your_wd <- ".../Step 1"
 
 setwd(your_wd)
 getwd() # Confirm correct wd
@@ -50,7 +50,8 @@ transcribe <- function (x) {
   
   x %>%
     str_remove_all("\r\n\r\nNOTE .*")  %>% #--- removes all NOTES and blank lines underneath
-    str_remove_all("\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}\\r\\n") # --- removes all random letter/number combinations
+    str_remove_all("\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}-\\w{1}\\r\\n") # --- removes all random letter/number combinations (updated Feb 2024)
+    # str_remove_all("\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}\\r\\n") # --- older version
 }
 
 # Running function over text column of "files" data frame
