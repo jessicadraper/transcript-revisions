@@ -50,7 +50,7 @@ transcribe <- function (x) {
   
   x %>%
     str_remove_all("\r\n\r\nNOTE .*")  %>% #--- removes all NOTES and blank lines underneath
-    str_remove_all("\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}-\\w{1}\\r\\n") # --- removes all random letter/number combinations (updated Feb 2024)
+    str_remove_all("\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}(-\\w{1})?\\r\\n") # --- removes all random letter/number combinations (updated Feb 2024)
     # str_remove_all("\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}\\r\\n") # --- older version
 }
 
