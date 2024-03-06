@@ -30,7 +30,7 @@ library(chron)
 # ==============================
 
 # (!) YOUR working directory, ending with "Step 2" folder (wd):
-your_wd <- "/Users/Jess/Documents/Work/Personal Work/webvtt revisions/Step 2"
+your_wd <- "/Users/jdraper/Jess Personal/git repos/transcript-revisions/Step 2"
 
 setwd(your_wd)
 getwd() # Confirm correct wd
@@ -74,7 +74,8 @@ transcribe <- function (x) {
     str_replace_all("  "," ")  %>% # --- fixing double spaces (fixes some, not all)
     str_replace_all("  "," ")  %>% # --- fixing double spaces again (fixes the rest)
     str_replace_all("\\s{1,}(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) -->","\r\n\r\n\\1 -->") %>% # making sure all timestamps start new line
-    str_replace_all("(?<!\\r\\n)<v (INV|PAR)>","\r\n\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") #%>% # --- breaks different speakers to new lines, no timestamps
+    str_replace_all("(?<!\\r\\n)<v (INV|PAR)>","\r\n\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") %>% # --- breaks different speakers to new lines, empty timestamps
+    str_replace_all("(?<!000\\r\\n)<v (INV|PAR)>","\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") #%>% # --- breaks different speakers with short lines back to back to new lines, empty timestamps
 }
 
 # Running function over text column of "files" data frame
@@ -115,19 +116,24 @@ assign_timestamps <- function (txt, endTime) {
   ts$start <- chron(times = ts$start)
   ts$end <- chron(times = ts$end)
   
-  # Function to calculate and assign new timestamps for missing timestamps
-  
+  # Loop to calculate and assign new timestamps for missing timestamps
   for (i in 1:nrow(ts)) {
-    non_zero <- which(ts[,2] != chron(times = "00:00:00"))
+    non_zero <- which(ts[,2] != chron(times = "00:00:00")) # Get indexes of times where end is 00:00:00
+    # if start time is real and end time is 00:00:00
     if (ts[i,2] == chron(times = "00:00:00") & ts[i,1] != chron(times = "00:00:00")) {
+      # get next real end time
       next_r <- non_zero[min(which(non_zero > i))]
       next_t <- ts[next_r,2]
+      # calculate difference in steps between next real and current timestamp position
       diff <- next_r - i
+      # increment by distance between real times divided by number of steps in between
       increment <- (next_t - ts[i,1])/(diff + 1)
       ts[i,4] <- paste(next_r, diff, increment)
       
       for (j in 1:diff) {
-        ts[i,2] <- ts[i,1] + (increment*j)
+        if (j == 1) {
+          ts[i,2] <- ts[i,1] + (increment*j)
+        }
         ts[(i+j),1] <- ts[i,1] + (increment*j)
         ts[(i+j),2] <-  ts[i,1] + (increment*(j+1))
       }
