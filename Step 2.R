@@ -59,23 +59,28 @@ for (i in 1:length(filelist)) {
 transcribe <- function (x) {
   
   x %>% 
+    str_replace_all("(<v (INV|PAR|INV)>)\\s?(\\d{1,2}:\\d{2}:\\d{2}.\\d{3} --> \\d{1,2}:\\d{2}:\\d{2}.\\d{3})\\r\\n(.*)", "\\3\r\n\\1 \\4") %>% # --- fixes if speaker codes are before timestamp
     str_replace_all("(\\r\\n\\r\\n)\\s{1}(\\d{1,2})","\\1\\2") %>% # --- removes single space before timestamps
     str_replace_all("(\\d{3}\\r\\n)\\s{1}","\\1") %>% # --- removes single space before text line
     str_replace_all("(\\d{1,2}:\\d{2}:\\d{2}.)(\\d{2,3})","\\1000") %>%   # --- adjusts all the partials time suffixes to .000
-    str_replace_all("(INV|PAR):","<v \\1>") %>%   # --- corrects speaker ID e.g. from INV: to <v INV>
-    str_replace_all("/\\s+<v (INV|PAR)>","/") %>%   # --- removes speaker IDs after /text/
+    str_replace_all("(INV|PAR|INT):","<v \\1>") %>%   # --- corrects speaker ID e.g. from INV: to <v INV>
+    str_replace_all("/\\s+<v (INV|PAR|INT)>","/") %>%   # --- removes speaker IDs after /text/
     str_replace_all("—->","-->") %>% # --- fixing hyphen issues
     str_replace_all("-—>","-->") %>% # --- fixing hyphen issue 2
     str_replace_all("\\n\\n(\\d{1,2}:\\d{2}:\\d{2}.\\d{3})","\r\n\r\n\\1") %>%  # --- fixing line issue before some timestamps
-    str_replace_all(".000\\s*\\n<v (INV|PAR)>",".000\r\n<v \\1>") %>% # --- fixing line issue before speaker ids
-    str_replace_all("\\r\\n\\r\\n(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) --> (\\d{1,2}:\\d{2}:\\d{2}.\\d{3})\\r?\\n(?!<)"," ") %>%   # --- collapses timestamps within a speaker's dialogue
-    str_replace_all("([:alpha:]|[:punct:])\\s?\\r\\n([:alpha:])","\\1 \\2") %>%   # --- removes unnecessary line breaks within dialogue
+    str_replace_all(".000\\s*\\n<v (INV|PAR|INT)>",".000\r\n<v \\1>") %>% # --- fixing line issue before speaker ids
+    str_replace_all("\\r\\n\\r\\n\\r?\\n?(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) --> (\\d{1,2}:\\d{2}:\\d{2}.\\d{3})\\r?\\n(?!<)"," ") %>%   # --- collapses timestamps within a speaker's dialogue
+    str_replace_all("([:alnum:]|[:punct:])\\s?\\r\\n([:alnum:]|[:punct:])","\\1 \\2") %>%   # --- removes unnecessary line breaks within dialogue
     str_replace_all("(\\r\\n\\s{3,}|\\r\\n\\t|\\s{2}\\r\\n\\s{2})"," ") %>%  # --- removes further unnecessary line breaks and tabs within dialogue
     str_replace_all("  "," ")  %>% # --- fixing double spaces (fixes some, not all)
     str_replace_all("  "," ")  %>% # --- fixing double spaces again (fixes the rest)
     str_replace_all("\\s{1,}(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) -->","\r\n\r\n\\1 -->") %>% # making sure all timestamps start new line
-    str_replace_all("(?<!\\r\\n)<v (INV|PAR)>","\r\n\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") %>% # --- breaks different speakers to new lines, empty timestamps
-    str_replace_all("(?<!000\\r\\n)<v (INV|PAR)>","\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") #%>% # --- breaks different speakers with short lines back to back to new lines, empty timestamps
+    str_replace_all("(?<!\\r\\n)<v (INV|PAR|INT)>","\r\n\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") %>% # --- breaks different speakers to new lines, empty timestamps
+    str_replace_all("(?<!000\\r\\n)<v (INV|PAR|INT)>","\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") %>% # --- breaks different speakers with short lines back to back to new lines, empty timestamps
+    str_replace_all("([:alnum:]|[:punct:])\\s?\\r\\n([:alnum:]|[:punct:])","\\1 \\2") %>%   # --- removes unnecessary line breaks within dialogue (again)
+    str_replace_all("(?<=<v PAR>)(.*)\\r\\n\\r\\n\\r?\\n?(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) --> (\\d{1,2}:\\d{2}:\\d{2}.\\d{3})\\r\\n<v PAR>","\\1 ") %>%   # --- collapses timestamps within a speaker's dialogue with consecutive speaker codes
+    str_replace_all("(?<=<v (INT|INV)>)(.*)\\r\\n\\r\\n\\r?\\n?(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) --> (\\d{1,2}:\\d{2}:\\d{2}.\\d{3})\\r\\n<v (INT|INV)>","\\2 ") %>%   # --- collapses timestamps within a speaker's dialogue with consecutive speaker codes
+    str_replace_all("\\r\\n\\r\\n\\r\\n", "\r\n\r\n")
 }
 
 # Running function over text column of "files" data frame
@@ -87,6 +92,7 @@ files$Text <- sapply(files[,2], transcribe)
 
 assign_timestamps <- function (txt, endTime) {
   
+  print("Next loop...")
   # Creating data frame of timestamps
   ts <- str_extract_all(txt,"(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) -->", simplify = TRUE)
   ts <- as.data.frame(t(ts))
@@ -118,9 +124,9 @@ assign_timestamps <- function (txt, endTime) {
   
   # Loop to calculate and assign new timestamps for missing timestamps
   for (i in 1:nrow(ts)) {
-    non_zero <- which(ts[,2] != chron(times = "00:00:00")) # Get indexes of times where end is 00:00:00
-    # if start time is real and end time is 00:00:00
-    if (ts[i,2] == chron(times = "00:00:00") & ts[i,1] != chron(times = "00:00:00")) {
+    non_zero <- which(ts[,2] != chron(times = "00:00:00")) # Get indexes of times where end is not 00:00:00
+    # if start time is real and end time is 00:00:00, or if first timestamp is 00:00:00
+    if ((ts[i,2] == chron(times = "00:00:00") & ts[i,1] != chron(times = "00:00:00")) | (ts[i,2] == chron(times = "00:00:00") & ts[i,1] == chron(times = "00:00:00") & i == 1)) {
       # get next real end time
       next_r <- non_zero[min(which(non_zero > i))]
       next_t <- ts[next_r,2]
