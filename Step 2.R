@@ -59,6 +59,7 @@ for (i in 1:length(filelist)) {
 transcribe <- function (x) {
   
   x %>% 
+    str_replace_all("<.? (INV|PAR|INV)>", "<v \\1>") %>% # --- corrects to lowercase v
     str_replace_all("(<v (INV|PAR|INV)>)\\s?(\\d{1,2}:\\d{2}:\\d{2}.\\d{3} --> \\d{1,2}:\\d{2}:\\d{2}.\\d{3})\\r\\n(.*)", "\\3\r\n\\1 \\4") %>% # --- fixes if speaker codes are before timestamp
     str_replace_all("(\\r\\n\\r\\n)\\s{1}(\\d{1,2})","\\1\\2") %>% # --- removes single space before timestamps
     str_replace_all("(\\d{3}\\r\\n)\\s{1}","\\1") %>% # --- removes single space before text line
@@ -90,9 +91,9 @@ files$Text <- sapply(files[,2], transcribe)
 # BIG Function: Assigning New Timestamps
 # ---------------------------------------
 
-assign_timestamps <- function (txt, endTime) {
+assign_timestamps <- function (name, txt, endTime) {
   
-  print("Next loop...")
+  cat("Assigning new timestamps to ", name, "...\n", sep="")
   # Creating data frame of timestamps
   ts <- str_extract_all(txt,"(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) -->", simplify = TRUE)
   ts <- as.data.frame(t(ts))
@@ -112,7 +113,11 @@ assign_timestamps <- function (txt, endTime) {
   # putting dialogue text as column
   split <- t(str_split(txt, "(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) --> (\\d{1,2}:\\d{2}:\\d{2}.\\d{3})", simplify = TRUE))
   split <- split[-1,]
-  ts$text <- split
+  if (nrow(ts) == length(split)) {
+    ts$text <- split
+  } else {
+    cat("ERROR! There is likely a major formatting issue in the following transcript:", name, "\n")
+  }
   
   # removing extra .000 at end of times (temporarily)
   ts$start <- str_replace_all(ts$start, "(\\d{1,2}:\\d{2}:\\d{2}).\\d{3}","\\1")
@@ -166,7 +171,7 @@ assign_timestamps <- function (txt, endTime) {
 }
 
 # Running function over text column of "files" data frame
-files$Text <- mapply(assign_timestamps,files[,2],files[,3])
+files$Text <- mapply(assign_timestamps,files[,1],files[,2],files[,3])
 
 # ==============================
 # Save Edited Files
