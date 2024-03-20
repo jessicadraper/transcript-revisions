@@ -76,6 +76,7 @@ transcribe <- function (x) {
     str_replace_all("  "," ")  %>% # --- fixing double spaces (fixes some, not all)
     str_replace_all("  "," ")  %>% # --- fixing double spaces again (fixes the rest)
     str_replace_all("\\s{1,}(\\d{1,2}:\\d{2}:\\d{2}.\\d{3}) -->","\r\n\r\n\\1 -->") %>% # making sure all timestamps start new line
+    str_replace_all("0{3,}:","00:") %>% # fixing cases of wrong number of timestamp digits
     str_replace_all("(?<!\\r\\n)<v (INV|PAR|INT)>","\r\n\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") %>% # --- breaks different speakers to new lines, empty timestamps
     str_replace_all("(?<!000\\r\\n)<v (INV|PAR|INT)>","\r\n00:00:00.000 --> 00:00:00.000\r\n<v \\1>") %>% # --- breaks different speakers with short lines back to back to new lines, empty timestamps
     str_replace_all("([:alnum:]|[:punct:])\\s?\\r\\n([:alnum:]|[:punct:])","\\1 \\2") %>%   # --- removes unnecessary line breaks within dialogue (again)
@@ -86,6 +87,7 @@ transcribe <- function (x) {
 
 # Running function over text column of "files" data frame
 files$Text <- sapply(files[,2], transcribe)
+
 
 # ---------------------------------------
 # BIG Function: Assigning New Timestamps
